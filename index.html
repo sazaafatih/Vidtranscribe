@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VidTranscribe - Video Transcription Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: #0f3460;
+            border-radius: 12px;
+            padding: 40px 24px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .title {
+            font-size: 32px;
+            font-weight: 700;
+            color: #00d4ff;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #a0a0a0;
+            line-height: 1.5;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #00d4ff;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        #urlInput {
+            width: 100%;
+            padding: 14px 16px;
+            font-size: 16px;
+            border: 2px solid #1a4d6d;
+            border-radius: 8px;
+            background: #0a1f2e;
+            color: #e0e0e0;
+            transition: all 0.3s ease;
+        }
+
+        #urlInput:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+        }
+
+        #urlInput::placeholder {
+            color: #505060;
+        }
+
+        .button-group {
+            margin-bottom: 30px;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px 20px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        #transcribeBtn {
+            background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+            color: #0f3460;
+        }
+
+        #transcribeBtn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 212, 255, 0.3);
+        }
+
+        #transcribeBtn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        #transcribeBtn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .loading-state {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading-state.active {
+            display: block;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            margin: 0 auto 16px;
+            border: 3px solid #1a4d6d;
+            border-top-color: #00d4ff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-text {
+            font-size: 14px;
+            color: #a0a0a0;
+        }
+
+        .result-section {
+            display: none;
+        }
+
+        .result-section.active {
+            display: block;
+        }
+
+        .language-badge {
+            display: inline-block;
+            background: #1a4d6d;
+            color: #00d4ff;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .transcript-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #00d4ff;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .transcript-box {
+            width: 100%;
+            max-height: 400px;
+            padding: 16px;
+            background: #0a1f2e;
+            border: 2px solid #1a4d6d;
+            border-radius: 8px;
+            color: #e0e0e0;
+            font-size: 14px;
+            line-height: 1.6;
+            overflow-y: auto;
+            user-select: text;
+            margin-bottom: 16px;
+            resize: none;
+        }
+
+        .transcript-box::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .transcript-box::-webkit-scrollbar-track {
+            background: #0a1f2e;
+        }
+
+        .transcript-box::-webkit-scrollbar-thumb {
+            background: #1a4d6d;
+            border-radius: 4px;
+        }
+
+        .transcript-box::-webkit-scrollbar-thumb:hover {
+            background: #2a6d9d;
+        }
+
+        #copyBtn {
+            background: #1a4d6d;
+            color: #00d4ff;
+            border: 2px solid #00d4ff;
+        }
+
+        #copyBtn:hover {
+            background: #00d4ff;
+            color: #0f3460;
+            box-shadow: 0 4px 12px rgba(0, 212, 255, 0.2);
+        }
+
+        #copyBtn:active {
+            transform: scale(0.98);
+        }
+
+        .error-section {
+            display: none;
+        }
+
+        .error-section.active {
+            display: block;
+        }
+
+        .error-message {
+            background: #4a1a1a;
+            border: 2px solid #ff4444;
+            color: #ff8888;
+            padding: 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .metadata {
+            font-size: 12px;
+            color: #a0a0a0;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #1a4d6d;
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 480px) {
+            .container {
+                padding: 24px 16px;
+            }
+
+            .title {
+                font-size: 24px;
+            }
+
+            .subtitle {
+                font-size: 13px;
+            }
+
+            button {
+                padding: 12px 16px;
+                font-size: 14px;
+            }
+
+            .transcript-box {
+                max-height: 300px;
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">VidTranscribe</h1>
+            <p class="subtitle">Paste a TikTok or Reels link, get the transcript instantly</p>
+        </div>
+
+        <form id="transcribeForm">
+            <div class="input-group">
+                <label class="input-label">Video URL</label>
+                <input
+                    type="text"
+                    id="urlInput"
+                    placeholder="https://www.tiktok.com/..."
+                    required
+                    autocomplete="off"
+                >
+            </div>
+
+            <div class="button-group">
+                <button type="submit" id="transcribeBtn">Transcribe</button>
+            </div>
+        </form>
+
+        <div class="loading-state" id="loadingState">
+            <div class="spinner"></div>
+            <div class="loading-text">Downloading & transcribing...</div>
+        </div>
+
+        <div class="error-section" id="errorSection">
+            <div class="error-message" id="errorMessage"></div>
+        </div>
+
+        <div class="result-section" id="resultSection">
+            <div class="language-badge" id="languageBadge"></div>
+            <label class="transcript-label">Transcript</label>
+            <div class="transcript-box" id="transcriptBox"></div>
+            <button type="button" id="copyBtn">Copy to Clipboard</button>
+            <div class="metadata" id="metadata"></div>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('transcribeForm');
+        const urlInput = document.getElementById('urlInput');
+        const transcribeBtn = document.getElementById('transcribeBtn');
+        const loadingState = document.getElementById('loadingState');
+        const errorSection = document.getElementById('errorSection');
+        const errorMessage = document.getElementById('errorMessage');
+        const resultSection = document.getElementById('resultSection');
+        const transcriptBox = document.getElementById('transcriptBox');
+        const languageBadge = document.getElementById('languageBadge');
+        const copyBtn = document.getElementById('copyBtn');
+        const metadata = document.getElementById('metadata');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await transcribe();
+        });
+
+        urlInput.addEventListener('keypress', async (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                await transcribe();
+            }
+        });
+
+        copyBtn.addEventListener('click', () => {
+            const text = transcriptBox.textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = copyBtn.textContent;
+                copyBtn.textContent = 'Copied!';
+                setTimeout(() => {
+                    copyBtn.textContent = originalText;
+                }, 2000);
+            }).catch(() => {
+                alert('Failed to copy to clipboard');
+            });
+        });
+
+        async function transcribe() {
+            const url = urlInput.value.trim();
+
+            if (!url) {
+                showError('Please enter a URL');
+                return;
+            }
+
+            // Clear previous results
+            clearResults();
+
+            // Show loading state
+            loadingState.classList.add('active');
+            transcribeBtn.disabled = true;
+
+            try {
+                const response = await fetch('/transcribe', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url }),
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    showError(data.error);
+                } else {
+                    showResult(data);
+                }
+            } catch (error) {
+                showError('Network error. Please try again.');
+                console.error('Error:', error);
+            } finally {
+                loadingState.classList.remove('active');
+                transcribeBtn.disabled = false;
+            }
+        }
+
+        function clearResults() {
+            errorSection.classList.remove('active');
+            resultSection.classList.remove('active');
+            errorMessage.textContent = '';
+            transcriptBox.textContent = '';
+        }
+
+        function showError(error) {
+            errorSection.classList.add('active');
+            errorMessage.textContent = error;
+        }
+
+        function showResult(data) {
+            languageBadge.textContent = data.language || 'Unknown';
+            transcriptBox.textContent = data.transcript;
+            
+            const minutes = Math.floor(data.duration_seconds / 60);
+            const seconds = Math.round(data.duration_seconds % 60);
+            metadata.innerHTML = `<strong>Duration:</strong> ${minutes}m ${seconds}s`;
+
+            resultSection.classList.add('active');
+        }
+    </script>
+</body>
+</html>
