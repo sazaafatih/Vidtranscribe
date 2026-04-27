@@ -1,7 +1,5 @@
 fastapi
 uvicorn
 yt-dlp
-groq
-python-dotenv
-python-multipart
-youtube-transcript-api
+httpx
+pydantic
