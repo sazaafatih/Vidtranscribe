@@ -1,6 +1,0 @@
-fastapi
-uvicorn
-yt-dlp
-groq
-python-dotenv
-python-multipart
